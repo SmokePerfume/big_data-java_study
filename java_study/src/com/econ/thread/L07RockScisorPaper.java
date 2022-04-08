@@ -27,7 +27,7 @@ class RSPGame extends JFrame{
 	JButton startb=new JButton("시작");
 	String[] enemy_arr= {"가위","바위","보"};
 	int select_enemy=0;
-	boolean start_game=true;
+	boolean start_game=false;
 	
 	public RSPGame() {
 		this.setLayout(new BoxLayout(this.getContentPane(),BoxLayout.Y_AXIS ));
@@ -36,17 +36,13 @@ class RSPGame extends JFrame{
 		sb.addActionListener(new GameButtonHandler());
 		rb.addActionListener(new GameButtonHandler());
 		pb.addActionListener(new GameButtonHandler());
-		startb.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				start_game=true;
-				Thread t=new Thread(new EnemyRandom());
-				t.start();
-			}
-		});
+		startb.addActionListener(new StartButtonHandler());
+		
 		p3.add(sb);
 		p3.add(rb);
 		p3.add(pb);
 		p4.add(startb);
+		
 		this.add(p0);
 		this.add(p1);
 		this.add(p2);
@@ -57,11 +53,22 @@ class RSPGame extends JFrame{
 		this.addWindowListener(new WindowHandler());
 		
 	}
+	class StartButtonHandler implements ActionListener{
+		public void actionPerformed(ActionEvent e) {
+			if(!start_game) {
+				start_game=true;
+				Thread t=new Thread(new EnemyRandom());
+				t.start();
+			}
+		}
+	}
 	class GameButtonHandler implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			//js에서 e.target과 동일
 			GameButton b=((GameButton)e.getSource());
-			System.out.println(b.num+"vs"+select_enemy);
+			String msg=(b.num-select_enemy==1||b.num-select_enemy==-2)?"승리":
+						(b.num-select_enemy==0)?"무승부":"패배";
+			resultL.setText(b.getText()+"vs"+enemy_arr[select_enemy]+" : "+msg);
 			start_game=false;
 		}
 		
