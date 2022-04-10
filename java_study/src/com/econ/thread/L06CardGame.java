@@ -42,8 +42,36 @@ class CardGameFrame extends JFrame{
 				}
 			}
 		});
-		
-		
+		Thread t3=new Thread(new Runnable() {
+			@Override
+			public void run() {
+				//선택한 두개의 카드가 같은지 .5초마다 무한히 검사하는 코드 
+				while(true) {
+					try {Thread.sleep(500);} catch (InterruptedException e1) {	e1.printStackTrace();}
+					if(click_cards.size()==2) { 
+						//실패했을 때 다시 뒤집기
+						if(click_cards.get(0).card_num!=click_cards.get(1).card_num) {
+							try {Thread.sleep(500);} catch (InterruptedException e1) {e1.printStackTrace();}
+							for(Card c: click_cards) {
+								c.setText(c.card_num+"");	
+							}
+							try {Thread.sleep(200);} catch (InterruptedException e1) {	e1.printStackTrace();}								
+							for(Card c: click_cards) {
+								c.setText("");								
+							}
+						}else{
+						//성공했을 때 다시 뒤집어지지 않도록 true로 바꾸기
+							for(Card c: click_cards) {
+								c.success=true;
+								c.setText(c.card_num+"");					
+							}
+						}
+						click_cards.clear();	
+						//성공하든 실패하든 2번 클릭하고 나면 클릭 초기화
+					}
+				}
+			}
+		});
 		this.setLayout(new GridLayout(3,4));
 		this.setBounds(600,100,600,800);
 		this.setVisible(true);
@@ -55,6 +83,7 @@ class CardGameFrame extends JFrame{
 		for(Card c: cards) { //버튼
 			c.addActionListener(new ChoiceCard(c));
 		}
+		t3.start();
 		
 		
 		
@@ -85,10 +114,6 @@ class CardGameFrame extends JFrame{
 
 	}
 }
-
-
-
-
 class Card extends JButton{
 	public int card_num;
 	public boolean success=false; //이미 끝난 카드
