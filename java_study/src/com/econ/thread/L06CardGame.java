@@ -10,24 +10,18 @@ import java.util.Random;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 
-
-
 class CardGameFrame extends JFrame{
 	Card[] cards=new Card[12];
 	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6};		
 	JFrame f=this;
-	
-	public CardGameFrame(String title) {
+	public CardGameFrame(String title) throws InterruptedException {
 		super(title);
 		randomCards();
-		//Card 버튼 12개를 flame에 붙이기
-		for(Card c :cards) {
-			add(c);
-			
-			c.addActionListener(new ChoiceCard(c,f)); //콘솔창에 tf에 입력된 값이 출력!!
+		for(Card c :cards) { //생성과 동시에 버튼에 이벤트 설정
+			add(c); 
+			c.addActionListener(new ChoiceCard(c,f)); 
 		}
-		//card 버튼 12개를 flame에 붙이기
-		new Thread(new Runnable() {
+		Thread t1=new Thread(new Runnable() {
 			public void run() {
 				for(Card c :cards) {
 					try {
@@ -39,13 +33,12 @@ class CardGameFrame extends JFrame{
 					f.validate();
 				}
 			}
-		}).start();
+		});
 		//다시 가리기
-		new Thread(new Runnable() {			
+		Thread t2=new Thread(new Runnable() {			
 			@Override
 			public void run() {
 				try {
-					Thread.sleep(1200);
 					for(Card c :cards) {
 						Thread.sleep(100);
 						c.setText("");
@@ -55,11 +48,17 @@ class CardGameFrame extends JFrame{
 					e.printStackTrace();
 				}
 			}
-		}).start();
+		});
+		
+		
 		this.setLayout(new GridLayout(3,4));
 		this.setBounds(600,100,600,800);
 		this.setVisible(true);
 		this.validate();	//새로고침
+		t1.start();
+		t1.join();
+		t2.start();
+		t2.join();
 	}
 	//카드섞기
 	public void randomCards() {
@@ -84,7 +83,7 @@ class ChoiceCard implements ActionListener{
 	}
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if(c.ending==true) {
+		if(c.ending==true) { //이미 완료된 카드
 			System.out.println(cnt_num+"번째"+"선택한 카드:"+c.card_num);
 			System.out.println("이미 완료된 카드");
 		}else if(c.checking==true) {
@@ -95,7 +94,7 @@ class ChoiceCard implements ActionListener{
 			temp=0;
 			cnt_num=1;
 			c.checking=false;
-		}else if(c.checking==true) {
+		}else if(c.checking==true) { 
 			System.out.println(cnt_num+"번째"+"선택한 카드:"+c.card_num);
 			System.out.println("선택했던 카드를 재 선택");
 			c.setText("");
@@ -119,15 +118,17 @@ class ChoiceCard implements ActionListener{
 			cnt_num=1;
 			temp=0;
 			f.validate();
-			c.setText(c.card_num+"");
+			c.setText(""+c.card_num);
 			try {
-				Thread.sleep(500);
+				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
 			c.setText("");
 			f.validate();
 			tempC.setText("");
+			c.checking=false;
+			tempC.checking=false;
 			tempC=null;
 		}else {
 			System.out.println(cnt_num+"번째"+"선택한 카드:"+c.card_num);
@@ -148,12 +149,15 @@ class Card extends JButton{
 	public boolean ending=false;
 	public Card(int card_num) {
 		this.card_num=card_num;
-		//this.setText(card_num+"");
 	}
 }
 
 public class L06CardGame{
-	public static void main(String[]args) {		
-		new CardGameFrame("카드게임");
+	public static void main(String[]args) {	
+		try{
+			new CardGameFrame("카드게임");
+		}catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 }
