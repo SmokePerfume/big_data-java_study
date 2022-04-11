@@ -38,6 +38,7 @@ class CardGameFrame extends JFrame{
 	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6};
 	LinkedList<Card> click_cards=new LinkedList<Card>();// 선택한 카드	
 	JFrame f=this;
+	boolean start=false;
 	public CardGameFrame(String title) throws InterruptedException {
 		super("카드게임");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //닫기
@@ -54,9 +55,21 @@ class CardGameFrame extends JFrame{
 		
 		JPanel footer = new JPanel();
 		JButton startBtn = new JButton("게임 시작!");
-		
+		startBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("시작버튼 작동");
+				start=true;
+			}
+		});
 		footer.add(startBtn);
-		
+
+		cont.add(header,BorderLayout.NORTH);
+		cont.add(main,BorderLayout.CENTER);
+		cont.add(footer,BorderLayout.SOUTH);
+		setSize(400,500); 
+		setVisible(true); 
+
 		randomCards();
 		for(Card c :cards) { //생성과 동시에 버튼에 이벤트 설정
 			c.setEnabled(false);
@@ -65,47 +78,71 @@ class CardGameFrame extends JFrame{
 		Thread t1=new ShowCards();
 		Thread t2=new HideCards();
 		Thread t3=new SuccesCards();
-		
-		cont.add(header,BorderLayout.NORTH);
-		cont.add(main,BorderLayout.CENTER);
-		cont.add(footer,BorderLayout.SOUTH);
-		setSize(400,500); 
-		setVisible(true); 
-		
-		t1.start();
-		t1.join();
-		t2.start();
-		t2.join();
-		for(Card c: cards) { //버튼에 이벤트 추가
-			c.addActionListener(new ChoiceCard(c));
-			c.setEnabled(true);
-		}
-		t3.start();
+		Thread t4=new Cntdown();
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				while(time>0) {
+				while(true) {
 					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						Thread.sleep(500);
+						System.out.println("스레드 대기중");
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
 					}
-					time-=1; 
-					timeL.setText(time+"초");
-					if(succes_cnt>=12) {
-						JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time*5)));
+					if(start) {
+						t1.start();
+						try {
+							t1.join();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						t2.start();
+						try {
+							t2.join();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						for(Card c: cards) { //버튼에 이벤트 추가
+							c.addActionListener(new ChoiceCard(c));
+							c.setEnabled(true);
+						}
+						t3.start();
+						t4.start();
+						start=false;
+						System.out.println("스레드 끝남");
 						break;
 					}
 				}
-				if(succes_cnt<12) { 
-					JOptionPane.showMessageDialog(null,"실패");
-						for(Card c :cards) {
-							c.setEnabled(false);
-						}
-				}
 			}
 		}).start();
+	}
+	
+	class Cntdown extends Thread {
+		@Override
+		public void run() {
+			while(time>0) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				time-=1; 
+				timeL.setText(time+"초");
+				if(succes_cnt>=12) {
+					JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time*5)));
+					break;
+				}
+			}
+			if(succes_cnt<12) { 
+				JOptionPane.showMessageDialog(null,"실패");
+					for(Card c :cards) {
+						c.setEnabled(false);
+					}
+			}
+		}
 	}
 
 	class ShowCards extends Thread {
