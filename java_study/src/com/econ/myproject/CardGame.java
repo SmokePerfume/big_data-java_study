@@ -1,4 +1,4 @@
-package com.econ.thread;
+package com.econ.myproject;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -262,7 +262,7 @@ class Card extends JButton{
 	}
 }
 
-public class L06CardGame{
+public class CardGame{
 	public static void main(String[]args) {	
 		try{
 			new CardGameFrame("카드게임");
