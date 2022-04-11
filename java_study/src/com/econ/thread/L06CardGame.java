@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
 import java.awt.event.*;
+import java.time.LocalTime;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
 
 interface CardColor{
 	Color FRONT=new Color(239, 255, 125);
@@ -27,8 +27,9 @@ interface CardColor{
 }
 
 class CardGameFrame extends JFrame{
-	int time=30;
-	int score=0;
+	public static int time=30;
+	public static int score=0;
+	public static int succes_cnt=0;
 	JLabel timeL=new JLabel(time+"초");
 	JLabel scoreL=new JLabel(score+"점");
 	
@@ -52,16 +53,48 @@ class CardGameFrame extends JFrame{
 		
 		JPanel footer = new JPanel();
 		JButton startBtn = new JButton("게임 시작!");
+		
+		footer.add(startBtn);
+		
 		randomCards();
+		for(Card c :cards) { //생성과 동시에 버튼에 이벤트 설정
+			c.setEnabled(false);
+			main.add(c); 
+		}
+		Thread t1=new ShowCards();
+		Thread t2=new HideCards();
+		Thread t3=new SuccesCards();
 		
 		cont.add(header,BorderLayout.NORTH);
 		cont.add(main,BorderLayout.CENTER);
 		cont.add(footer,BorderLayout.SOUTH);
 		setSize(400,500); 
 		setVisible(true); 
-		footer.add(startBtn);
 		
-		
+		t1.start();
+		t1.join();
+		t2.start();
+		t2.join();
+		for(Card c: cards) { //버튼에 이벤트 추가
+			c.addActionListener(new ChoiceCard(c));
+			c.setEnabled(true);
+		}
+		t3.start();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(time>0) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					time-=1; 
+					timeL.setText(time+"초");
+				}
+			}
+		}).start();
 	}
 
 	class ShowCards extends Thread {
@@ -107,12 +140,16 @@ class CardGameFrame extends JFrame{
 						try {Thread.sleep(500);} catch (InterruptedException e1) {	e1.printStackTrace();}								
 						for(Card c: click_cards) {
 							c.setText("");		
+							score+=-5; //(총 2번 반복하므로 -10)
+							scoreL.setText(score+"점");
 							c.setBackground(CardColor.BACK);
 							c.setForeground(CardColor.BACK_TEXT);	
 						}
 					}else{ //카드가 같음 
 						for(Card c: click_cards) {
 							c.success=true;
+							score+=5; //(총 2번 반복하므로 +10)
+							scoreL.setText(score+"점");
 							c.setText(c.card_num+"");	
 							c.setBackground(CardColor.SUCCESS);
 							c.setForeground(CardColor.SUCCESS_TEXT);	
