@@ -10,6 +10,7 @@ import java.time.LocalTime;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 interface CardColor{
@@ -92,6 +93,16 @@ class CardGameFrame extends JFrame{
 					}
 					time-=1; 
 					timeL.setText(time+"초");
+					if(succes_cnt>=12) {
+						JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time*5)));
+						break;
+					}
+				}
+				if(succes_cnt<12) { 
+					JOptionPane.showMessageDialog(null,"실패");
+						for(Card c :cards) {
+							c.setEnabled(false);
+						}
 				}
 			}
 		}).start();
@@ -149,6 +160,7 @@ class CardGameFrame extends JFrame{
 						for(Card c: click_cards) {
 							c.success=true;
 							score+=5; //(총 2번 반복하므로 +10)
+							succes_cnt+=1;
 							scoreL.setText(score+"점");
 							c.setText(c.card_num+"");	
 							c.setBackground(CardColor.SUCCESS);
