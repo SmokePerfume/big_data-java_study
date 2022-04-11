@@ -4,11 +4,13 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
-import java.awt.Color;
 import java.awt.event.*;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 
 interface CardColor{
 	Color FRONT=new Color(239, 255, 125);
@@ -23,35 +25,41 @@ interface CardColor{
 	Color SUCCESS=new Color(200, 240, 200);
 	Color SUCCESS_TEXT=new Color(15, 115, 25);	
 }
+
 class CardGameFrame extends JFrame{
+	int time=30;
+	int score=0;
+	JLabel timeL=new JLabel(time+"초");
+	JLabel scoreL=new JLabel(score+"점");
+	
 	Card[] cards=new Card[12];
 	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6};
 	LinkedList<Card> click_cards=new LinkedList<Card>();// 선택한 카드	
 	JFrame f=this;
 	public CardGameFrame(String title) throws InterruptedException {
-		super(title);
+		super("카드게임");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //닫기
+		
+		Container cont = getContentPane(); 
+		cont.setLayout(new BorderLayout()); 
+		cont.setBackground(new Color(150,34,255));
+		
+		JPanel header = new JPanel();
+		header.add(timeL);
+		header.add(scoreL);
+		JPanel main = new JPanel();
+		main.setLayout(new GridLayout(3,4,10,10));
+		
+		JPanel footer = new JPanel();
+		JButton startBtn = new JButton("게임 시작!");
 		randomCards();
-		for(Card c :cards) { //생성과 동시에 버튼에 이벤트 설정
-			add(c); 
-		}
 		
-		Thread t1=new ShowCards();
-		Thread t2=new HideCards();
-		Thread t3=new SuccesCards();
-		this.setLayout(new GridLayout(3,4));
-		this.setBounds(600,100,600,800);
-		this.setVisible(true);
-		this.validate();	//새로고침
-		t1.start();
-		t1.join();
-		t2.start();
-		t2.join();
-		for(Card c: cards) { //버튼
-			c.addActionListener(new ChoiceCard(c));
-		}
-		t3.start();
-		
-		
+		cont.add(header,BorderLayout.NORTH);
+		cont.add(main,BorderLayout.CENTER);
+		cont.add(footer,BorderLayout.SOUTH);
+		setSize(400,500); 
+		setVisible(true); 
+		footer.add(startBtn);
 		
 		
 	}
@@ -81,7 +89,7 @@ class CardGameFrame extends JFrame{
 		}
 	}
 	
-	
+	//2개의 카드 선택시
 	class SuccesCards extends Thread {
 		@Override
 		public void run() {
@@ -96,7 +104,7 @@ class CardGameFrame extends JFrame{
 							c.setBackground(CardColor.FAILED);
 							c.setForeground(CardColor.FAILED_TEXT);	
 						}
-						try {Thread.sleep(200);} catch (InterruptedException e1) {	e1.printStackTrace();}								
+						try {Thread.sleep(500);} catch (InterruptedException e1) {	e1.printStackTrace();}								
 						for(Card c: click_cards) {
 							c.setText("");		
 							c.setBackground(CardColor.BACK);
@@ -116,7 +124,8 @@ class CardGameFrame extends JFrame{
 		}
 	}
 	
-	public void randomCards() {//링크리스트 변환 후 그 크기안에서 랜덤한 위치의 숫자를 뽑아냄
+	//카드 생성
+	public void randomCards() {
 		LinkedList<Integer> card_list=new LinkedList<Integer>(Arrays.asList(cards_nums)); 
 		for(int i=0; i< cards_nums.length; i++){
 			int random=(int)(new Random().nextDouble()*card_list.size());
@@ -124,6 +133,7 @@ class CardGameFrame extends JFrame{
 		}	
 	}
 	
+	//카드 선택시
 	class ChoiceCard implements ActionListener{
 		Card c;
 		public ChoiceCard(Card c) {
