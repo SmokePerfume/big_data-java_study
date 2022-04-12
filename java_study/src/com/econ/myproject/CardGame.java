@@ -4,6 +4,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -18,6 +19,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
 
 interface CardColor{ //전부 상수처리됨
 	Color FRONT=new Color(239, 255, 125);
@@ -34,160 +36,120 @@ interface CardColor{ //전부 상수처리됨
 }
 
 class CardGameFrame extends JFrame{
-	public static int time=30;
+	//public static int time=30;
+	AtomicInteger time=new AtomicInteger(30);
 	public static int score=0;
 	public static int succes_cnt=0;
 	public static boolean ready=true;
 	public static boolean cnt_run=false;
-	JLabel timeL=new JLabel(time+"초");
+	JLabel timeL=new JLabel(time.get()+"초");
 	JLabel scoreL=new JLabel(score+"점");
+	Container cont = getContentPane(); 
+	JPanel header = new JPanel();
+	JPanel main = new JPanel();
+	JPanel footer = new JPanel();
+	JButton startBtn = new JButton("게임 시작");
+
+	Thread t1;
+	Thread t2;
+	Thread t3;
+	Thread t4;
 	
-	Card[] cards=new Card[12];
-	Card[] cards_clone=new Card[12]; //생성된 카드들을 저장(다시 삭제하기 위함)
-	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6};
-	LinkedList<Card> click_cards=new LinkedList<Card>();// 선택한 카드	
 	JFrame f=this;
-	boolean start=false;
+	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12};
+	Card[] cards=new Card[cards_nums.length];
+	Card[] cards_clone=new Card[cards_nums.length]; //생성된 카드들을 저장(다시 삭제하기 위함)
+	LinkedList<Card> click_cards=new LinkedList<Card>();// 선택한 카드	
+	
 	public CardGameFrame(String title) throws InterruptedException, IOException {
 		super("카드게임");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //닫기
 		
-		Container cont = getContentPane(); 
+		
 		cont.setLayout(new BorderLayout()); 
 		cont.setBackground(new Color(150,34,255));
 		
-		JPanel header = new JPanel();
 		header.add(timeL);
 		header.add(scoreL);
-		JPanel main = new JPanel();
-		main.setLayout(new GridLayout(3,4,10,10));
 		
-		JPanel footer = new JPanel();
-		JButton startBtn = new JButton("게임 시작!");
+		main.setLayout(new GridLayout(4,6,10,10)); 
 		footer.add(startBtn);
-		JLabel image=new JLabel("");
 		
-		
-		
-
-//		BufferedImage thumbnail=new BufferedImage(300,200,BufferedImage.TYPE_3BYTE_BGR);
-//		BufferedImage img=ImageIO.read(new File("src/com/econ/myproject/gamebg.jpg"));
-//		thumbnail.createGraphics().drawImage(img, 0, 0, 400, 500,null);
-//		ImageIcon ii=new ImageIcon(thumbnail);
-//		image.setIcon(ii);
-//		this.add(image);
 		cont.add(header,BorderLayout.NORTH);
-
 		cont.add(main,BorderLayout.CENTER);
 		cont.add(footer,BorderLayout.SOUTH);
 		this.setBounds(0,0,400,500); 
 		this.setVisible(true); 
-		
-		Thread GameT=new WaitingGame();
-		Thread btnready=new BtnReady(startBtn);
-		btnready.start();
-		GameT.start();//항상 게임시작을 준비하는 중
-		
-		startBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
+		startBtn.addActionListener(new StartBtnHandler());
+	}
+	
+	class StartBtnHandler implements ActionListener{
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			new Thread() {
+				public void run() {
 				startBtn.setEnabled(false);
-				ready=false;
-				randomCards();
-				if(cards_clone[0]!=null) { //기존 카드들 삭제후 재시작
-					for(Card c :cards_clone) { 
-						main.remove(c);
-					}
-					for(int i=0;i<cards_clone.length;i++) { 
-						cards_clone[i]=null;
-					}
-				}
-				int i=0;
-				for(Card c :cards) {  //카드 설정
-					c.setEnabled(false);
-					main.add(c); 
-					cards_clone[i++]=c;
-				}
-				i=0;
 				System.out.println("시작버튼 작동");
-				time=30;
-				timeL.setText(time+"초");
+				randomCards();
+				clearCard();
+				cardset();
 				score=0;
 				scoreL.setText(score+"점");
-				start=true; //GameT의 게임시작 트리거
-			}
-		});
-	}
-	
-	class BtnReady extends Thread { //버튼 제어용 
-		JButton startBtn;
-		public BtnReady(JButton startBtn) {
-			this.startBtn=startBtn;
-		}
-		public void run(){
-			while(true) {
-				try {Thread.sleep(100);} catch (InterruptedException e1) {e1.printStackTrace();}
-				if(ready==false) {
-					System.out.println("버튼꺼짐");
-					try {
-						Thread.sleep(3500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					startBtn.setEnabled(true);
-					ready=true;
+				ready=false;
+				
+				t1=new ShowCards();
+				t2=new HideCards();
+				t3=new SuccesCards();
+				t4=new Cntdown();
+				cnt_run=true;
+				//t1~t2까지 순서대로 진행 후 t1,t2 끝나면 t3, t4동시에 시작
+				t1.start();
+				try {t1.join();} catch (InterruptedException e1) {e1.printStackTrace();}
+				t2.start();
+				try {t2.join();} catch (InterruptedException e2) {e2.printStackTrace();}
+				for(Card c: cards) { //버튼에 이벤트 추가
+					c.addActionListener(new ChoiceCard(c));
+					c.setEnabled(true);
 				}
-			}
+
+				startBtn.setEnabled(true);
+				cnt_run=false;
+				t3.start();
+				t4.start();
+				}
+			}.start();
 		}
 	}
-	
-	
-	class WaitingGame extends Thread {
-		@Override
-		public void run() {
-			while(true) {
-				try {
-					Thread.sleep(500);
-					System.out.println("게임 시작 스레드 대기중");
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-				if(start) {
-					Thread t1=new ShowCards();
-					Thread t2=new HideCards();
-					Thread t3=new SuccesCards();
-					Thread t4=new Cntdown();
-					cnt_run=true;
-					//t1~t2까지 순서대로 진행 후 t1,t2 끝나면 t3, t4동시에 시작
-					t1.start();
-					try {t1.join();} catch (InterruptedException e) {e.printStackTrace();}
-					t2.start();
-					try {t2.join();} catch (InterruptedException e) {e.printStackTrace();}
-					for(Card c: cards) { //버튼에 이벤트 추가
-						c.addActionListener(new ChoiceCard(c));
-						c.setEnabled(true);
-					}
-					cnt_run=false;
-					t3.start();
-					t4.start();
-					start=false;
-					System.out.println("------게임 시작 했음--------");
-					
-				}
+
+	public void clearCard() {//기존 카드들 삭제후 재시작
+		if(cards_clone[0]!=null) { 
+			for(Card c :cards_clone) { 
+				main.remove(c);
 			}
+			for(int i=0;i<cards_clone.length;i++) { 
+				cards_clone[i]=null;
+			}
+		}
+	}
+	
+	public void cardset() {//카드 설정
+		int i=0;
+		for(Card c :cards) {  
+			c.setEnabled(false);
+			main.add(c); 
+			cards_clone[i++]=c;
 		}
 	}
 	
 	class Cntdown extends Thread {
 		@Override
 		public void run() {
-			while(time>0) {
+			time.set(30);
+			timeL.setText(time+"초");
+			while(time.get()>0) {
 				System.out.println("Cntdown 스레드 실행중");
 				if(cnt_run) { 
 					System.out.println("기존 Cntdown 스레드 꺼짐");
-					time=30;
-					timeL.setText(time+"초");
 					this.interrupt();	
 				}
 				try {
@@ -197,17 +159,17 @@ class CardGameFrame extends JFrame{
 					return;
 				}
 				if(succes_cnt>=12) {
-					JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time*5)));
+					JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time.get()*5)));
 					for(Card c :cards) {
 						c.setEnabled(false);
 					}
 					succes_cnt=0;
 					break;
 				}
-				time-=1; 
+				time.set(time.get()-1); 
 				timeL.setText(time+"초");
 			}
-			if(time<=0&&succes_cnt<12) { 
+			if(time.get()<=0&&succes_cnt<cards_nums.length) { 
 				JOptionPane.showMessageDialog(null,"실패");
 					for(Card c :cards) {
 						c.setEnabled(false);
@@ -247,7 +209,7 @@ class CardGameFrame extends JFrame{
 		public void run() {
 			while(true) { //카드 .5초마다 무한히 검사하는 코드 
 				System.out.println("succes 스레드 실행중");
-				if(cnt_run||succes_cnt>=12) { 
+				if(cnt_run||succes_cnt>=cards_nums.length) { 
 					System.out.println("기존 succes 스레드 꺼짐");
 					this.interrupt();
 					break;
@@ -315,6 +277,7 @@ class CardGameFrame extends JFrame{
 
 	}
 }
+
 class Card extends JButton{
 	public int card_num;
 	public boolean success=false; //이미 끝난 카드
