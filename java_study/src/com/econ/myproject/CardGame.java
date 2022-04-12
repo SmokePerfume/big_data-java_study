@@ -15,7 +15,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-interface CardColor{
+interface CardColor{ //전부 상수처리됨
 	Color FRONT=new Color(239, 255, 125);
 	Color FRONT_TEXT=new Color(0, 0, 0);
 	
@@ -182,10 +182,11 @@ class CardGameFrame extends JFrame{
 		@Override
 		public void run() {
 			while(time>0) {
-
 				System.out.println("Cntdown 스레드 실행중");
 				if(cnt_run) { 
-					System.out.println("기존 카운트 스레드 꺼짐");
+					System.out.println("기존 Cntdown 스레드 꺼짐");
+					time=30;
+					timeL.setText(time+"초");
 					this.interrupt();	
 				}
 				try {
@@ -244,12 +245,12 @@ class CardGameFrame extends JFrame{
 		@Override
 		public void run() {
 			while(true) { //카드 .5초마다 무한히 검사하는 코드 
+				System.out.println("succes 스레드 실행중");
 				if(cnt_run||succes_cnt>=12) { 
 					System.out.println("기존 succes 스레드 꺼짐");
 					this.interrupt();
 					break;
 				}
-				System.out.println(" succes 스레드 실행중");
 				try {Thread.sleep(500);} catch (InterruptedException e1) {	e1.printStackTrace();}
 				if(click_cards.size()==2) { 
 					//실패했을 때 다시 뒤집기
