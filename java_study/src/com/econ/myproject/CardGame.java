@@ -5,8 +5,12 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalTime;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -39,12 +43,12 @@ class CardGameFrame extends JFrame{
 	JLabel scoreL=new JLabel(score+"점");
 	
 	Card[] cards=new Card[12];
-	Card[] cards_clone=new Card[12];
+	Card[] cards_clone=new Card[12]; //생성된 카드들을 저장(다시 삭제하기 위함)
 	Integer [] cards_nums= {1,1,2,2,3,3,4,4,5,5,6,6};
 	LinkedList<Card> click_cards=new LinkedList<Card>();// 선택한 카드	
 	JFrame f=this;
 	boolean start=false;
-	public CardGameFrame(String title) throws InterruptedException {
+	public CardGameFrame(String title) throws InterruptedException, IOException {
 		super("카드게임");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //닫기
 		
@@ -60,27 +64,24 @@ class CardGameFrame extends JFrame{
 		
 		JPanel footer = new JPanel();
 		JButton startBtn = new JButton("게임 시작!");
-		
 		footer.add(startBtn);
+		JLabel image=new JLabel("");
 		
-		///////////////////
-//		JLabel imageLabel = new JLabel(img0);
-//		JLabel test= new JLabel(new ImageIcon("src/com/econ/stutudent/john/c011.png"));
-//		JPanel mp=new JPanel();
-//		mp.setLayout(null);
-//		imageLabel.setBounds(0, 0, 400, 400);
-//		test.setBounds(0, 0, 400, 400);
-//		mp.add(test);
-//		mp.add(imageLabel);
-//		mp.setPreferredSize(test.getPreferredSize());
-		/////////////////////
+		
+		
 
+//		BufferedImage thumbnail=new BufferedImage(300,200,BufferedImage.TYPE_3BYTE_BGR);
+//		BufferedImage img=ImageIO.read(new File("src/com/econ/myproject/gamebg.jpg"));
+//		thumbnail.createGraphics().drawImage(img, 0, 0, 400, 500,null);
+//		ImageIcon ii=new ImageIcon(thumbnail);
+//		image.setIcon(ii);
+//		this.add(image);
 		cont.add(header,BorderLayout.NORTH);
+
 		cont.add(main,BorderLayout.CENTER);
 		cont.add(footer,BorderLayout.SOUTH);
-		setSize(400,500); 
-		setVisible(true); 
-
+		this.setBounds(0,0,400,500); 
+		this.setVisible(true); 
 		
 		Thread GameT=new WaitingGame();
 		Thread btnready=new BtnReady(startBtn);
@@ -327,6 +328,8 @@ public class CardGame{
 		try{
 			new CardGameFrame("카드게임");
 		}catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
