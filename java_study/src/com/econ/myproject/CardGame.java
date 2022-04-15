@@ -51,7 +51,7 @@ interface CardColor{ //전부 상수처리됨
 class Card extends JButton{
 	public int card_num;
 	public boolean success=false; //이미 끝난 카드
-	public boolean gaming=false; //카드가 비교 중인가 확인하기위한 변수(색 변화 통제)
+	public boolean gaming=false; //카드가 비교 중인가 확인하기위한 변수(색 변화 통제, setEnabled기능)
 	public Card(int card_num) throws IOException {
 		this.card_num=card_num;
 	}
@@ -64,29 +64,25 @@ class Card extends JButton{
 	
 	@Override
 	protected void paintComponent(Graphics g) {
-		int width = getWidth(); 
-		int height = getHeight(); 
-		Graphics2D graphics = (Graphics2D) g;
-		//배경의 사각형을 변화하기위해(테두리를 둥글게)
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); 
-		if (getModel().isArmed()) {  // 마우스를 누른
-			graphics.setColor(getBackground().darker()); 
-		} else if (getModel().isRollover()) {  //마우스가 올려진
-			graphics.setColor(getBackground().brighter()); 
-		} else { 
-			graphics.setColor(getBackground()); 
-		}
-		graphics.fillRoundRect(0, 0, width, height, 40, 40); 
-		FontMetrics fontMetrics = graphics.getFontMetrics(); 
-		Rectangle stringBounds = fontMetrics.getStringBounds(this.getText(), graphics).getBounds();
-		
-		int textX = (width - stringBounds.width) / 2; 
-		int textY = (height - stringBounds.height) / 2 + fontMetrics.getAscent(); 
-		graphics.setColor(getForeground()); graphics.setFont(getFont()); 
-		graphics.drawString(getText(), textX, textY); 
-		graphics.dispose(); 
-		super.paintComponent(g);
-	}
+        int width = getWidth(); 
+        int height = getHeight(); 
+        Graphics2D graphics = (Graphics2D) g; 
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); 
+        if (getModel().isArmed()) { graphics.setColor(getBackground()); } 
+        else if (getModel().isRollover()) { graphics.setColor(getBackground()); } 
+        else { graphics.setColor(getBackground()); } 
+        graphics.fillRoundRect(0, 0, width, height, 20, 20); 
+        FontMetrics fontMetrics = graphics.getFontMetrics(); 
+        Rectangle stringBounds = fontMetrics.getStringBounds(this.getText(), graphics).getBounds(); 
+        //글장 위치 조정 & 기본 색, 기본 폰트 이용
+        int textX = (width - stringBounds.width) / 2; 
+        int textY = (height - stringBounds.height) / 2 + fontMetrics.getAscent();  
+        graphics.setColor(getForeground()); 
+        graphics.setFont(getFont());
+        graphics.drawString(getText(), textX, textY); 
+        graphics.dispose(); 
+        super.paintComponent(g); 
+        }
 }
 class CardGameFrame extends JFrame{
 	AtomicInteger time=new AtomicInteger(30);
@@ -161,7 +157,6 @@ class CardGameFrame extends JFrame{
 					try {t2.join();} catch (InterruptedException e2) {e2.printStackTrace();}
 					for(Card c: cards) { //버튼에 이벤트 추가
 						c.addMouseListener(new ChoiceCard(c));
-						c.setEnabled(true);
 					}
 					startBtn.setEnabled(true);
 					t3.start();
@@ -185,8 +180,7 @@ class CardGameFrame extends JFrame{
 	public void cardset() {//카드 설정
 		int i=0;
 		for(Card c :cards) {  
-			c.setEnabled(false);
-			c.setOpaque(true);
+			c.setOpaque(false);
 			main.add(c); 
 			cards_clone[i++]=c;
 		}
@@ -201,9 +195,6 @@ class CardGameFrame extends JFrame{
 				try {Thread.sleep(1000);} catch (InterruptedException e) {return;}
 				if(succes_cnt>=cards_nums.length) {
 					JOptionPane.showMessageDialog(null,"소요시간:"+ time+"초 / 총 점수: "+(score+(time.get()*5)));
-					for(Card c :cards) {
-						c.setEnabled(false);
-					}
 					succes_cnt=0;
 					break;
 				}else {
@@ -212,10 +203,14 @@ class CardGameFrame extends JFrame{
 				}
 			}
 			if(time.get()<=0&&succes_cnt<cards_nums.length) { 
-				JOptionPane.showMessageDialog(null,"실패");
-					for(Card c :cards) {
-						c.setEnabled(false);
+				for(Card c :cards) {
+					c.gaming=true;
+					if(!c.success) {
+						c.setText(c.card_num+"");
 					}
+				}
+				succes_cnt=0;
+				JOptionPane.showMessageDialog(null,"실패");
 			}
 		}
 	}
@@ -309,7 +304,7 @@ class CardGameFrame extends JFrame{
 		}
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			if(c.success) return; //성공한 카드를 선택 
+			if(c.success||c.gaming) return; //성공한 카드를 선택 
 			if(click_cards.size()<2) {//성공한 카드를 제외하고 선택 & 숫보여줌 같은 카드면 취소
 				if(click_cards.size()==1 && c==click_cards.get(0) ) return; 
 				click_cards.add(c);
